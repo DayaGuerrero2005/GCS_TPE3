@@ -28,7 +28,7 @@ Estas notas describen cómo se instala una versión del **Gestor de tareas** fue
    ```
 
    Desde la pestaña *Actions* (artefacto `imagen-docker-<versión>`) o desde la *Release* correspondiente se descargan:
-   `gestor-tareas-<versión>.tar.gz`, `docker-compose.deploy.yml`, `.env.example` y `VERSION`.
+   `gestor-tareas-<versión>.tar.gz`, `docker-compose.deploy.yml`, `env.example` y `VERSION`. (El archivo de variables va sin punto inicial porque los artefactos de GitHub omiten archivos ocultos.)
 
 3. **Cargar la imagen en Docker**
 
@@ -39,7 +39,7 @@ Estas notas describen cómo se instala una versión del **Gestor de tareas** fue
 4. **Configurar variables**
 
    ```bash
-   cp .env.example .env    # cambiar la contraseña y la clave secreta en un entorno real
+   cp env.example .env     # cambiar la contraseña y la clave secreta en un entorno real
    ```
 
 5. **Levantar los contenedores**

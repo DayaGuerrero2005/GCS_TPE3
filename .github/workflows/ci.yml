@@ -131,7 +131,8 @@ jobs:
         run: |
           mkdir -p paquete
           docker save ${IMAGE_NAME}:${{ steps.version.outputs.version }} | gzip > paquete/${IMAGE_NAME}-${{ steps.version.outputs.version }}.tar.gz
-          cp docker-compose.deploy.yml .env.example deploy-notes.md paquete/
+          cp docker-compose.deploy.yml deploy-notes.md paquete/
+          cp .env.example paquete/env.example   # upload-artifact omite archivos ocultos
           echo "${{ steps.version.outputs.version }}" > paquete/VERSION
           ls -lh paquete
 
@@ -177,7 +178,7 @@ jobs:
         run: |
           ls -lh
           gunzip -c ${IMAGE_NAME}-${VERSION}.tar.gz | docker load
-          cp .env.example .env
+          cp env.example .env
           IMAGE_TAG=${VERSION} docker compose -f docker-compose.deploy.yml up -d
           for i in $(seq 1 30); do
             curl -fs http://localhost:8000/health/ && break
