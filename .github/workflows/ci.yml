@@ -120,8 +120,100 @@ jobs:
         if: always()
         run: docker compose down -v
 
+      - name: Preparar publicación en Docker Hub (simulado)
+        run: |
+          DESTINO="usuario-dockerhub/${IMAGE_NAME}:${{ steps.version.outputs.version }}"
+          docker tag ${IMAGE_NAME}:${{ steps.version.outputs.version }} "$DESTINO"
+          echo "Imagen etiquetada como $DESTINO"
+          echo "Comando que se usaría con credenciales reales: docker push $DESTINO"
+
+      - name: Empaquetar la imagen como artefacto
+        run: |
+          mkdir -p paquete
+          docker save ${IMAGE_NAME}:${{ steps.version.outputs.version }} | gzip > paquete/${IMAGE_NAME}-${{ steps.version.outputs.version }}.tar.gz
+          cp docker-compose.deploy.yml .env.example deploy-notes.md paquete/
+          echo "${{ steps.version.outputs.version }}" > paquete/VERSION
+          ls -lh paquete
+
+      - name: Guardar artefacto de la imagen
+        uses: actions/upload-artifact@v6
+        with:
+          name: imagen-docker-${{ steps.version.outputs.version }}
+          path: paquete/
+          retention-days: 14
+
       - name: Guardar capturas del build
         uses: actions/upload-artifact@v6
         with:
           name: capturas-build
           path: capturas/
+
+  # ---------------------------------------------------------------
+  # 3. Despliegue simulado en una carpeta externa al repositorio
+  # ---------------------------------------------------------------
+  deploy:
+    name: Deploy - despliegue simulado
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      VERSION: ${{ needs.build.outputs.version }}
+      DESTINO: /tmp/despliegue-externo
+
+    steps:
+      - name: Descargar el proyecto en la carpeta externa
+        run: |
+          git clone --depth 1 "https://github.com/${GITHUB_REPOSITORY}.git" "${DESTINO}/proyecto"
+          cd "${DESTINO}/proyecto" && git fetch --depth 1 origin "${GITHUB_SHA}" && git checkout -q "${GITHUB_SHA}"
+          git log -1 --oneline
+
+      - name: Descargar la imagen construida por el pipeline
+        uses: actions/download-artifact@v7
+        with:
+          name: imagen-docker-${{ needs.build.outputs.version }}
+          path: /tmp/despliegue-externo
+
+      - name: Cargar la imagen y levantar con Docker Compose
+        working-directory: /tmp/despliegue-externo
+        run: |
+          ls -lh
+          gunzip -c ${IMAGE_NAME}-${VERSION}.tar.gz | docker load
+          cp .env.example .env
+          IMAGE_TAG=${VERSION} docker compose -f docker-compose.deploy.yml up -d
+          for i in $(seq 1 30); do
+            curl -fs http://localhost:8000/health/ && break
+            sleep 2
+          done
+          echo
+          IMAGE_TAG=${VERSION} docker compose -f docker-compose.deploy.yml ps
+
+      - name: Validar desde el navegador
+        run: |
+          pip install playwright==1.48.0
+          python -m playwright install --with-deps chromium
+          python ${DESTINO}/proyecto/scripts/capturar.py http://localhost:8000 /tmp/capturas-despliegue despliegue
+
+      - name: Resumen del despliegue
+        if: always()
+        working-directory: /tmp/despliegue-externo
+        run: |
+          {
+            echo "## Despliegue simulado"
+            echo ""
+            echo "| Dato | Valor |"
+            echo "|---|---|"
+            echo "| Versión desplegada | \`${VERSION}\` |"
+            echo "| Carpeta de despliegue | \`${DESTINO}\` |"
+            echo "| Commit | \`${GITHUB_SHA::7}\` |"
+            echo "| Respuesta de /health/ | \`$(curl -s http://localhost:8000/health/)\` |"
+            echo ""
+            echo "### Contenedores en ejecución"
+            echo '```'
+            IMAGE_TAG=${VERSION} docker compose -f docker-compose.deploy.yml ps
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar capturas del despliegue
+        uses: actions/upload-artifact@v6
+        with:
+          name: capturas-despliegue
+          path: /tmp/capturas-despliegue/
