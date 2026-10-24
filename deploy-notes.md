@@ -6,7 +6,7 @@ Estas notas describen cómo se instala una versión del **Gestor de tareas** fue
 
 - Imagen Docker `gestor-tareas:<versión>`, construida y probada por el job `build`.
 - Base de datos PostgreSQL 16 en un contenedor aparte.
-- La versión sigue el formato `0.1.<número de ejecución>-<commit>` en ramas y `X.Y.Z` cuando se publica una etiqueta `vX.Y.Z`.
+- La versión sigue el formato `0.1.<número de ejecución>-<commit>` en ramas de trabajo y `X.Y.Z` (archivo `VERSION`) en `main`, donde además se publica la release `vX.Y.Z`.
 
 ## Requisitos
 
