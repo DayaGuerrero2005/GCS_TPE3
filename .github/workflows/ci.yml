@@ -7,7 +7,13 @@ on:
     branches: [main]
   workflow_dispatch:
 
+env:
+  IMAGE_NAME: gestor-tareas
+
 jobs:
+  # ---------------------------------------------------------------
+  # 1. Integración continua: análisis de código y pruebas
+  # ---------------------------------------------------------------
   test:
     name: CI - pruebas y análisis
     runs-on: ubuntu-latest
@@ -34,10 +40,10 @@ jobs:
 
     steps:
       - name: Descargar el código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Instalar Python 3.10
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.10"
           cache: pip
@@ -57,3 +63,65 @@ jobs:
 
       - name: Ejecutar pruebas (python manage.py test)
         run: python manage.py test --verbosity 2
+
+  # ---------------------------------------------------------------
+  # 2. Construcción: imagen Docker versionada y guardada como artefacto
+  # ---------------------------------------------------------------
+  build:
+    name: Build - imagen Docker
+    runs-on: ubuntu-latest
+    needs: test
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v6
+
+      - name: Calcular la versión del build
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="0.1.${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Versión del build: ${VERSION}"
+
+      - name: Construir la imagen
+        run: |
+          docker build \
+            --build-arg APP_VERSION=${{ steps.version.outputs.version }} \
+            --label org.opencontainers.image.revision=${GITHUB_SHA} \
+            -t ${IMAGE_NAME}:${{ steps.version.outputs.version }} \
+            -t ${IMAGE_NAME}:latest .
+          docker image ls ${IMAGE_NAME}
+
+      - name: Validar la imagen con Docker Compose
+        env:
+          IMAGE_TAG: ${{ steps.version.outputs.version }}
+        run: |
+          docker compose up -d
+          for i in $(seq 1 30); do
+            curl -fs http://localhost:8000/health/ && break
+            sleep 2
+          done
+          echo
+          docker compose ps
+
+      - name: Capturar el sistema corriendo en el contenedor
+        run: |
+          pip install playwright==1.48.0
+          python -m playwright install --with-deps chromium
+          python scripts/capturar.py http://localhost:8000 capturas build
+
+      - name: Detener el entorno de validación
+        if: always()
+        run: docker compose down -v
+
+      - name: Guardar capturas del build
+        uses: actions/upload-artifact@v6
+        with:
+          name: capturas-build
+          path: capturas/
