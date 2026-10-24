@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestor de tareas</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; background: #f2f5f8; color: #1b3247; margin: 0; }
+    header { background: #1b3247; color: #fff; padding: 18px 32px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { margin: 0; font-size: 22px; }
+    .badge { background: #f28c1e; color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 13px; }
+    main { max-width: 760px; margin: 28px auto; padding: 0 16px; }
+    form.nueva { background: #fff; padding: 16px; border-radius: 8px; display: grid; gap: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+    input, textarea { font: inherit; padding: 8px; border: 1px solid #c5d0db; border-radius: 6px; }
+    button { font: inherit; cursor: pointer; border: 0; border-radius: 6px; padding: 8px 14px; background: #1b3247; color: #fff; }
+    ul { list-style: none; padding: 0; }
+    li { background: #fff; margin: 8px 0; padding: 12px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    li.hecha .titulo { text-decoration: line-through; color: #7a8a99; }
+    li form button { background: #e7edf3; color: #1b3247; }
+    footer { text-align: center; font-size: 12px; color: #7a8a99; margin: 24px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gestor de tareas</h1>
+    <span class="badge">versión {{ app_version }}</span>
+  </header>
+  <main>
+    <form class="nueva" method="post">
+      {% csrf_token %}
+      {{ form.titulo }}
+      {{ form.descripcion }}
+      <button type="submit">Agregar</button>
+    </form>
+    <p>{{ pendientes }} tarea(s) pendiente(s)</p>
+    <ul>
+      {% for tarea in tareas %}
+      <li class="{% if tarea.completada %}hecha{% endif %}">
+        <div><strong class="titulo">{{ tarea.titulo }}</strong>{% if tarea.descripcion %}<br><small>{{ tarea.descripcion }}</small>{% endif %}</div>
+        <form method="post" action="{% url 'alternar_tarea' tarea.pk %}">
+          {% csrf_token %}
+          <button type="submit">{% if tarea.completada %}Reabrir{% else %}Completar{% endif %}</button>
+        </form>
+      </li>
+      {% empty %}
+      <li>No hay tareas registradas.</li>
+      {% endfor %}
+    </ul>
+  </main>
+  <footer>Django + PostgreSQL en Docker - Gestión de la Configuración de Software</footer>
+</body>
+</html>
