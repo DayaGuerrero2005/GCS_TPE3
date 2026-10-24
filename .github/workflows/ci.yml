@@ -237,11 +237,18 @@ jobs:
           name: imagen-docker-${{ needs.build.outputs.version }}
           path: paquete
 
+      - name: Descargar las capturas de validación
+        uses: actions/download-artifact@v7
+        with:
+          pattern: capturas-*
+          path: evidencias
+          merge-multiple: true
+
       - name: Crear la release en GitHub
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" paquete/* \
+          gh release create "${GITHUB_REF_NAME}" paquete/* evidencias/*.png \
             --repo "${GITHUB_REPOSITORY}" \
             --title "Gestor de tareas ${GITHUB_REF_NAME}" \
-            --notes "Imagen Docker validada por CI y desplegada en entorno simulado. Ver deploy-notes.md para instalarla."
+            --notes "Imagen Docker validada por CI y desplegada en entorno simulado. Incluye las capturas de validación del build y del despliegue. Ver deploy-notes.md para instalarla."
