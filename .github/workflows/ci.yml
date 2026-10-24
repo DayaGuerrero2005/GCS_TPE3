@@ -1,0 +1,59 @@
+name: CI/CD Django
+
+on:
+  push:
+    branches: [main, ci-setup]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: CI - pruebas y análisis
+    runs-on: ubuntu-latest
+
+    # Base de datos PostgreSQL temporal solo para las pruebas
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: tareas
+          POSTGRES_USER: tareas
+          POSTGRES_PASSWORD: tareas
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tareas"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      POSTGRES_HOST: localhost
+      DJANGO_SECRET_KEY: clave-de-pruebas-ci
+
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt flake8
+
+      - name: Análisis estático (flake8)
+        run: flake8 --max-line-length 120 --exclude .venv,migrations .
+
+      - name: Revisar configuración y migraciones
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+
+      - name: Ejecutar pruebas (python manage.py test)
+        run: python manage.py test --verbosity 2
