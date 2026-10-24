@@ -42,4 +42,4 @@ Requiere un PostgreSQL accesible; las credenciales se leen de `POSTGRES_DB`, `PO
 | CI - pruebas y análisis | flake8, `manage.py check`, verificación de migraciones y `manage.py test` contra PostgreSQL |
 | Build - imagen Docker | construye y versiona la imagen, la valida con Compose, la etiqueta para Docker Hub (simulado) y la guarda como artefacto |
 | Deploy - despliegue simulado | descarga proyecto e imagen en una carpeta externa, levanta con Compose y valida en navegador |
-| Release - publicar versión | solo con etiquetas `vX.Y.Z`: crea la release con la imagen adjunta |
+| Release - publicar versión | al integrar en `main` crea la etiqueta `v` + contenido de `VERSION` y publica la release con la imagen y las capturas |
