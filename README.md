@@ -1,5 +1,7 @@
 # Gestor de tareas - Flujo CI/CD para Django
 
+![CI/CD Django](https://github.com/DayaGuerrero2005/GCS_TPE3/actions/workflows/ci.yml/badge.svg)
+
 Aplicación Django con PostgreSQL usada para la práctica de **Gestión de la Configuración de Software** (UNEMI): integración continua con GitHub Actions, construcción de imágenes Docker y despliegue simulado.
 
 ## Estructura
@@ -43,3 +45,17 @@ Requiere un PostgreSQL accesible; las credenciales se leen de `POSTGRES_DB`, `PO
 | Build - imagen Docker | construye y versiona la imagen, la valida con Compose, la etiqueta para Docker Hub (simulado) y la guarda como artefacto |
 | Deploy - despliegue simulado | descarga proyecto e imagen en una carpeta externa, levanta con Compose y valida en navegador |
 | Release - publicar versión | al integrar en `main` crea la etiqueta `v` + contenido de `VERSION` y publica la release con la imagen y las capturas |
+
+## Qué muestra este proyecto
+
+- Aplicación web en **Django + PostgreSQL** empaquetada en **Docker** y servida con **Gunicorn**.
+- Pipeline completo en **GitHub Actions**: análisis estático (flake8), pruebas automáticas, construcción y versionado de la imagen, despliegue simulado con **Docker Compose** y validación en navegador con **Playwright**.
+- Publicación automática de releases con la imagen y las capturas de la validación.
+
+**Tecnologías:** Python · Django · PostgreSQL · Docker · Docker Compose · GitHub Actions · Playwright · Gunicorn
+
+## Contacto
+
+**Dayanara Guerrero** · Estudiante de último semestre de Ingeniería de Software (UNEMI)
+
+[LinkedIn](https://www.linkedin.com/in/dayanara-guerrero-j22/) · [Portafolio](https://dayaguerrero2005.github.io/Portafolio-DW/) · dayanararguerreroj@outlook.es
