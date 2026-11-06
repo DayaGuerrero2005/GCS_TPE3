@@ -113,6 +113,11 @@ jobs:
           echo
           docker compose ps
 
+      - name: Instalar Python 3.12 para Playwright
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
       - name: Capturar el sistema corriendo en el contenedor
         run: |
           pip install playwright==1.48.0
@@ -189,6 +194,11 @@ jobs:
           done
           echo
           IMAGE_TAG=${VERSION} docker compose -f docker-compose.deploy.yml ps
+
+      - name: Instalar Python 3.12 para Playwright
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
 
       - name: Validar desde el navegador
         run: |
